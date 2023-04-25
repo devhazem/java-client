@@ -133,6 +133,12 @@ class ServerBuilderTest {
     }
 
     @Test
+    void checkSecureConnectionFlagStartsServerCorrectly() {
+        service = new AppiumServiceBuilder().usingSecureConnection(true).build();
+        assertTrue(service.getUrl().toString().startsWith("https"));
+    }
+
+    @Test
     void checkAbilityToStartServiceUsingNonLocalhostIP() {
         service = new AppiumServiceBuilder().withIPAddress(testIP).build();
         service.start();

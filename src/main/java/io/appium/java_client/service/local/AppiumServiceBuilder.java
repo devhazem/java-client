@@ -81,6 +81,7 @@ public final class AppiumServiceBuilder
     private String ipAddress = BROADCAST_IP_ADDRESS;
     private Capabilities capabilities;
     private boolean autoQuoteCapabilitiesOnWindows = false;
+    private boolean secure = false;
     private static final Function<File, String> APPIUM_JS_NOT_EXIST_ERROR = (fullPath) -> String.format(
             "The main Appium script does not exist at '%s'", fullPath.getAbsolutePath());
     private static final Function<File, String> NODE_JS_NOT_EXIST_ERROR = (fullPath) ->
@@ -447,6 +448,11 @@ public final class AppiumServiceBuilder
         return super.usingAnyFreePort();
     }
 
+    public AppiumServiceBuilder usingSecureConnection(boolean secure) {
+        this.secure = secure;
+        return this;
+    }
+
     /**
      * Defines the environment for the launched appium server.
      *
@@ -478,7 +484,7 @@ public final class AppiumServiceBuilder
                                                            Map<String, String> nodeEnvironment) {
         String basePath = serverArguments.getOrDefault(
                 GeneralServerFlag.BASEPATH.getArgument(), serverArguments.get("-pa"));
-        return new AppiumDriverLocalService(ipAddress, nodeJSExecutable, nodeJSPort, startupTimeout, nodeArguments,
+        return new AppiumDriverLocalService(ipAddress, secure, nodeJSExecutable, nodeJSPort, startupTimeout, nodeArguments,
                 nodeEnvironment).withBasePath(basePath);
     }
 }
