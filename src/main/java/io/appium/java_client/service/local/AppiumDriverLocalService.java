@@ -72,7 +72,7 @@ public final class AppiumDriverLocalService extends DriverService {
 
     private CommandLine process = null;
 
-    AppiumDriverLocalService(String ipAddress, boolean isSecureConnection, File nodeJSExec,
+    AppiumDriverLocalService(String ipAddress, String domainName, boolean isSecureConnection, File nodeJSExec,
                              int nodeJSPort, Duration startupTimeout,
                              List<String> nodeJSArgs, Map<String, String> nodeJSEnvironment
     ) throws IOException {
@@ -83,7 +83,8 @@ public final class AppiumDriverLocalService extends DriverService {
         this.startupTimeout = startupTimeout;
         this.isSecureConnection = isSecureConnection;
         String protocol = this.isSecureConnection ? HTTPS_PROTOCOL : HTTP_PROTOCOL;
-        this.url = new URL(String.format(URL_MASK, protocol, ipAddress, nodeJSPort));
+        String address = StringUtils.isNoneBlank(domainName) ? domainName : ipAddress;
+        this.url = new URL(String.format(URL_MASK, protocol, address, nodeJSPort));
     }
 
     public static AppiumDriverLocalService buildDefaultService() {

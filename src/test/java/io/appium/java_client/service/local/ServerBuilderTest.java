@@ -34,6 +34,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -356,5 +357,75 @@ class ServerBuilderTest {
     @Test
     void checkAbilityToValidateBasePathForNullBasePath() {
         assertThrows(NullPointerException.class, () -> new AppiumServiceBuilder().withArgument(BASEPATH, null));
+    }
+
+    @Test
+    void checkAbilityToValidateInvalidSpecialCharDomainName() {
+        assertThrows(IllegalArgumentException.class, () -> new AppiumServiceBuilder().usingAnyFreePort()
+                .withDomainName("*").build());
+    }
+
+    @Test
+    void checkAbilityToValidateInvalidEmptyDomainName() {
+        assertThrows(IllegalArgumentException.class, () -> new AppiumServiceBuilder().usingAnyFreePort()
+                .withDomainName("").build());
+    }
+
+    @Test
+    void checkAbilityToValidateInvalidDomainNameWithProtocol() {
+        assertThrows(IllegalArgumentException.class, () -> new AppiumServiceBuilder().usingAnyFreePort()
+                .withDomainName("https://one.two.com").build());
+    }
+
+    @Test
+    void checkAbilityToValidateInvalidDomainNameWithIpAddress() {
+        assertThrows(IllegalArgumentException.class, () -> new AppiumServiceBuilder().usingAnyFreePort()
+                .withDomainName("0.0.0.0").build());
+    }
+
+    @Test
+    void checkAbilityToValidateValidDomainName() {
+        assertDoesNotThrow(() -> new AppiumServiceBuilder().usingAnyFreePort()
+                .withDomainName("onetwo.com").build());
+    }
+
+    @Test
+    void checkSecureUrlIsBuiltCorrectly() {
+        AppiumDriverLocalService builder = new AppiumServiceBuilder().usingAnyFreePort()
+                .usingSecureConnection(true)
+                .withDomainName("onetwo.com")
+                .usingPort(1234)
+                .build();
+        assertEquals("https://onetwo.com:1234/", builder.getUrl().toString());
+    }
+
+    @Test
+    void checkNoneSecureUrlIsBuiltCorrectly() {
+        AppiumDriverLocalService builder = new AppiumServiceBuilder().usingAnyFreePort()
+                .usingSecureConnection(false)
+                .withDomainName("onetwo.com")
+                .usingPort(1234)
+                .build();
+        assertEquals("http://onetwo.com:1234/", builder.getUrl().toString());
+    }
+
+    @Test
+    void checkNoneSecureIpAddressIsBuiltCorrectly() {
+        AppiumDriverLocalService builder = new AppiumServiceBuilder().usingAnyFreePort()
+                .usingSecureConnection(false)
+                .withIPAddress("1.1.1.1")
+                .usingPort(1234)
+                .build();
+        assertEquals("http://1.1.1.1:1234/", builder.getUrl().toString());
+    }
+
+    @Test
+    void checkSecureIpAddressIsBuiltCorrectly() {
+        AppiumDriverLocalService builder = new AppiumServiceBuilder().usingAnyFreePort()
+                .usingSecureConnection(true)
+                .withIPAddress("1.1.1.1")
+                .usingPort(1234)
+                .build();
+        assertEquals("https://1.1.1.1:1234/", builder.getUrl().toString());
     }
 }

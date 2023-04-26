@@ -17,6 +17,7 @@
 package io.appium.java_client.service.local;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.net.InternetDomainName;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.appium.java_client.internal.ReflectionHelpers;
@@ -82,6 +83,7 @@ public final class AppiumServiceBuilder
     private Capabilities capabilities;
     private boolean autoQuoteCapabilitiesOnWindows = false;
     private boolean secure = false;
+    private String domainName;
     private static final Function<File, String> APPIUM_JS_NOT_EXIST_ERROR = (fullPath) -> String.format(
             "The main Appium script does not exist at '%s'", fullPath.getAbsolutePath());
     private static final Function<File, String> NODE_JS_NOT_EXIST_ERROR = (fullPath) ->
@@ -280,6 +282,11 @@ public final class AppiumServiceBuilder
         return this;
     }
 
+    public AppiumServiceBuilder withDomainName(String domainName){
+        this.domainName = domainName;
+        return this;
+    }
+
     @Nullable
     private static File loadPathFromEnv(String envVarName) {
         String fullPath = System.getProperty(envVarName);
@@ -401,6 +408,13 @@ public final class AppiumServiceBuilder
             argList.add(capabilitiesToCmdlineArg());
         }
 
+        if(domainName != null) {
+            if(!InternetDomainName.isValid(domainName)){
+                throw new IllegalArgumentException(
+                        String.format("The invalid domainName '%s' is defined", domainName));
+            }
+        }
+
         return new ImmutableList.Builder<String>().addAll(argList).build();
     }
 
@@ -484,7 +498,7 @@ public final class AppiumServiceBuilder
                                                            Map<String, String> nodeEnvironment) {
         String basePath = serverArguments.getOrDefault(
                 GeneralServerFlag.BASEPATH.getArgument(), serverArguments.get("-pa"));
-        return new AppiumDriverLocalService(ipAddress, secure, nodeJSExecutable, nodeJSPort, startupTimeout, nodeArguments,
-                nodeEnvironment).withBasePath(basePath);
+        return new AppiumDriverLocalService(ipAddress, domainName, secure, nodeJSExecutable, nodeJSPort, startupTimeout,
+                nodeArguments, nodeEnvironment).withBasePath(basePath);
     }
 }
