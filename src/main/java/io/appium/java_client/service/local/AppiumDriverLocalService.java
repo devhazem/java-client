@@ -52,7 +52,9 @@ import static org.slf4j.event.Level.INFO;
 
 public final class AppiumDriverLocalService extends DriverService {
 
-    private static final String URL_MASK = "http://%s:%d/";
+    private static final String URL_MASK = "%s://%s:%d/";
+    private static final String HTTP_PROTOCOL = "http";
+    private static final String HTTPS_PROTOCOL = "https";
     private static final Logger LOG = LoggerFactory.getLogger(AppiumDriverLocalService.class);
     private static final Pattern LOG_MESSAGE_PATTERN = Pattern.compile("^(.*)\\R");
     private static final Pattern LOGGER_CONTEXT_PATTERN = Pattern.compile("^(\\[debug\\] )?\\[(.+?)\\]");
@@ -67,19 +69,23 @@ public final class AppiumDriverLocalService extends DriverService {
     private final ListOutputStream stream = new ListOutputStream().add(System.out);
     private final URL url;
     private String basePath;
+    private boolean isSecureConnection;
 
     private CommandLine process = null;
 
-    AppiumDriverLocalService(String ipAddress, File nodeJSExec,
-                             int nodeJSPort, Duration startupTimeout,
-                             List<String> nodeJSArgs, Map<String, String> nodeJSEnvironment
+    AppiumDriverLocalService(String ipAddress, String domainName, boolean isSecureConnection, File nodeJSExec,
+                             int nodeJSPort, Duration startupTimeout, List<String> nodeJSArgs,
+                             Map<String, String> nodeJSEnvironment
     ) throws IOException {
         super(nodeJSExec, nodeJSPort, startupTimeout, nodeJSArgs, nodeJSEnvironment);
         this.nodeJSExec = nodeJSExec;
         this.nodeJSArgs = nodeJSArgs;
         this.nodeJSEnvironment = nodeJSEnvironment;
         this.startupTimeout = startupTimeout;
-        this.url = new URL(String.format(URL_MASK, ipAddress, nodeJSPort));
+        this.isSecureConnection = isSecureConnection;
+        String protocol = this.isSecureConnection ? HTTPS_PROTOCOL : HTTP_PROTOCOL;
+        String address = StringUtils.isNoneBlank(domainName) ? domainName : ipAddress;
+        this.url = new URL(String.format(URL_MASK, protocol, address, nodeJSPort));
     }
 
     public static AppiumDriverLocalService buildDefaultService() {
@@ -97,6 +103,15 @@ public final class AppiumDriverLocalService extends DriverService {
 
     public String getBasePath() {
         return this.basePath;
+    }
+
+    public AppiumDriverLocalService withSecureConnection(boolean secureConnection) {
+        this.isSecureConnection = secureConnection;
+        return this;
+    }
+
+    public boolean isSecureConnection() {
+        return this.isSecureConnection;
     }
 
     @SneakyThrows
