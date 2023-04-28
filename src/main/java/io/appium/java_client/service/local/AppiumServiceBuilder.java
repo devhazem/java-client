@@ -21,6 +21,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.openqa.selenium.remote.CapabilityType.PLATFORM_NAME;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.net.InternetDomainName;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -83,6 +84,8 @@ public final class AppiumServiceBuilder
     private String ipAddress = BROADCAST_IP_ADDRESS;
     private Capabilities capabilities;
     private boolean autoQuoteCapabilitiesOnWindows = false;
+    private boolean secure = false;
+    private String domainName;
     private static final Function<File, String> APPIUM_JS_NOT_EXIST_ERROR = (fullPath) -> String.format(
             "The main Appium script does not exist at '%s'", fullPath.getAbsolutePath());
     private static final Function<File, String> NODE_JS_NOT_EXIST_ERROR = (fullPath) ->
@@ -280,6 +283,11 @@ public final class AppiumServiceBuilder
         return this;
     }
 
+    public AppiumServiceBuilder withDomainName(String domainName){
+        this.domainName = domainName;
+        return this;
+    }
+
     @Nullable
     private static File loadPathFromEnv(String envVarName) {
         String fullPath = System.getProperty(envVarName);
@@ -401,6 +409,13 @@ public final class AppiumServiceBuilder
             argList.add(capabilitiesToCmdlineArg());
         }
 
+        if(domainName != null) {
+            if(!InternetDomainName.isValid(domainName)){
+                throw new IllegalArgumentException(
+                        String.format("The invalid domainName '%s' is defined", domainName));
+            }
+        }
+
         return new ImmutableList.Builder<String>().addAll(argList).build();
     }
 
@@ -437,6 +452,11 @@ public final class AppiumServiceBuilder
         return super.usingAnyFreePort();
     }
 
+    public AppiumServiceBuilder usingSecureConnection(boolean secure) {
+        this.secure = secure;
+        return this;
+    }
+
     /**
      * Defines the environment for the launched appium server.
      *
@@ -468,7 +488,7 @@ public final class AppiumServiceBuilder
                                                            Map<String, String> nodeEnvironment) {
         String basePath = serverArguments.getOrDefault(
                 GeneralServerFlag.BASEPATH.getArgument(), serverArguments.get("-pa"));
-        return new AppiumDriverLocalService(ipAddress, nodeJSExecutable, nodeJSPort, startupTimeout, nodeArguments,
-                nodeEnvironment).withBasePath(basePath);
+        return new AppiumDriverLocalService(ipAddress, domainName, secure, nodeJSExecutable, nodeJSPort, startupTimeout,
+                nodeArguments, nodeEnvironment).withBasePath(basePath);
     }
 }
